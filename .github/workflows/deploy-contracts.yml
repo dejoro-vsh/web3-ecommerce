@@ -6,9 +6,10 @@ on:
       network:
         description: 'Network to deploy to'
         required: true
-        default: 'amoy'
+        default: 'polygon'
         type: choice
         options:
+          - polygon
           - amoy
 
 jobs:
@@ -35,6 +36,7 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           AMOY_RPC_URL: "https://rpc-amoy.polygon.technology/"
+          POLYGON_RPC_URL: "https://polygon-rpc.com/"
         run: |
           if [ -z "$PRIVATE_KEY" ]; then
             echo "Error: PRIVATE_KEY secret is not set!"
