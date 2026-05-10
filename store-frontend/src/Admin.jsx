@@ -8,6 +8,10 @@ function Admin() {
   
   // Form State
   const [formData, setFormData] = useState({ id: null, name: '', price: '', image: '', is_active: true });
+  
+  // Login State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -99,6 +103,38 @@ function Admin() {
   const resetForm = () => {
     setFormData({ id: null, name: '', price: '', image: '', is_active: true });
   };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === '123456') {
+      setIsAuthenticated(true);
+    } else {
+      alert('รหัสผ่านไม่ถูกต้อง (Incorrect Password)');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container" style={{ maxWidth: '400px', textAlign: 'center', marginTop: '10vh' }}>
+        <div className="product-card">
+          <h1 className="title" style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Admin Login</h1>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <input 
+              type="password" 
+              placeholder="Enter Password" 
+              value={passwordInput} 
+              onChange={(e) => setPasswordInput(e.target.value)}
+              style={{ padding: '1rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', textAlign: 'center', fontSize: '1rem' }}
+            />
+            <button type="submit" className="btn-pay">Login</button>
+          </form>
+          <div style={{ marginTop: '1.5rem' }}>
+            <a href="/" style={{ color: '#38bdf8', textDecoration: 'none' }}>&larr; Back to Store</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container" style={{ maxWidth: '800px' }}>
