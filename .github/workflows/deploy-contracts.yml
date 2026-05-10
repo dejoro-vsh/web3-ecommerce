@@ -1,0 +1,44 @@
+name: Deploy Smart Contracts to Polygon Amoy
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Network to deploy to'
+        required: true
+        default: 'amoy'
+        type: choice
+        options:
+          - amoy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./web3-contracts
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Deploy Contracts
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          AMOY_RPC_URL: "https://rpc-amoy.polygon.technology/"
+        run: |
+          if [ -z "$PRIVATE_KEY" ]; then
+            echo "Error: PRIVATE_KEY secret is not set!"
+            exit 1
+          fi
+          echo "Running deployment script on $NETWORK..."
+          npx hardhat run scripts/deploy.js --network ${{ github.event.inputs.network }}
