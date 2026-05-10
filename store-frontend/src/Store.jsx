@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import './index.css';
 
-const CONTRACT_ADDRESS = "0xYourPaymentProcessorContractAddress";
-const USDC_ADDRESS = "0xYourMockUSDCAddress";
+const CONTRACT_ADDRESS = "0xfeD90595f09942405e5786810f8d68dACa507538";
+const USDC_ADDRESS = "0xb8DC5c827a3934cbC15Eac7b85fADC00ca91B5BD";
 
 const ERC20_ABI = [
   "function approve(address spender, uint256 amount) public returns (bool)"
@@ -67,15 +67,23 @@ function Store() {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       
-      setStatus("Please confirm the transaction in MetaMask...");
+      const usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
+      const paymentContract = new ethers.Contract(CONTRACT_ADDRESS, PAYMENT_PROCESSOR_ABI, signer);
+
+      // Convert price to USDC units (6 decimals)
+      const amountInUnits = ethers.parseUnits(price.toString(), 6);
       
-      const tx = await signer.sendTransaction({
-        to: account, // Mock transaction for testing
-        value: 0
-      });
+      setStatus("Step 1: Please approve USDC spending in MetaMask...");
+      const approveTx = await usdcContract.approve(CONTRACT_ADDRESS, amountInUnits);
       
-      setStatus("Waiting for blockchain confirmation...");
-      await tx.wait();
+      setStatus("Step 1: Waiting for approval confirmation on blockchain...");
+      await approveTx.wait();
+
+      setStatus("Step 2: Please confirm the payment in MetaMask...");
+      const payTx = await paymentContract.pay(productId, amountInUnits);
+      
+      setStatus("Step 2: Waiting for payment confirmation...");
+      await payTx.wait();
 
       setStatus(`Payment Successful for Product #${productId}!`);
     } catch (error) {
