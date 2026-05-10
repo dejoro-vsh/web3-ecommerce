@@ -44,7 +44,10 @@ function Admin() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        if (!response.ok) throw new Error('Update failed');
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Update failed with status ${response.status}`);
+        }
         setStatus('Product updated successfully!');
       } else {
         // Insert new
@@ -53,12 +56,16 @@ function Admin() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: formData.name, price: formData.price, image: formData.image }),
         });
-        if (!response.ok) throw new Error('Insert failed');
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Insert failed with status ${response.status}`);
+        }
         setStatus('Product added successfully!');
       }
       resetForm();
       fetchProducts();
     } catch (error) {
+      console.error(error);
       setStatus(`Error saving: ${error.message}`);
     }
   };
@@ -75,11 +82,15 @@ function Admin() {
       const response = await fetch(`/api/products?id=${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Delete failed');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Delete failed with status ${response.status}`);
+      }
       
       setStatus('Product deleted successfully!');
       fetchProducts();
     } catch (error) {
+      console.error(error);
       setStatus(`Error deleting: ${error.message}`);
     }
   };
