@@ -8,20 +8,22 @@ export default async function handler(req, res) {
     } 
     
     if (req.method === 'POST') {
-      const { name, price, image } = req.body;
+      const { name, price, image, is_active } = req.body;
+      const activeStatus = is_active !== undefined ? is_active : true;
       const { rows } = await sql`
-        INSERT INTO products (name, price, image) 
-        VALUES (${name}, ${price}, ${image}) 
+        INSERT INTO products (name, price, image, is_active) 
+        VALUES (${name}, ${price}, ${image}, ${activeStatus}) 
         RETURNING *;
       `;
       return res.status(201).json(rows[0]);
     }
 
     if (req.method === 'PUT') {
-      const { id, name, price, image } = req.body;
+      const { id, name, price, image, is_active } = req.body;
+      const activeStatus = is_active !== undefined ? is_active : true;
       const { rows } = await sql`
         UPDATE products 
-        SET name = ${name}, price = ${price}, image = ${image} 
+        SET name = ${name}, price = ${price}, image = ${image}, is_active = ${activeStatus}
         WHERE id = ${id} 
         RETURNING *;
       `;

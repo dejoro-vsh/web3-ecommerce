@@ -7,7 +7,7 @@ function Admin() {
   const [status, setStatus] = useState('');
   
   // Form State
-  const [formData, setFormData] = useState({ id: null, name: '', price: '', image: '' });
+  const [formData, setFormData] = useState({ id: null, name: '', price: '', image: '', is_active: true });
 
   useEffect(() => {
     fetchProducts();
@@ -29,7 +29,8 @@ function Admin() {
   };
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -54,7 +55,7 @@ function Admin() {
         const response = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: formData.name, price: formData.price, image: formData.image }),
+          body: JSON.stringify({ name: formData.name, price: formData.price, image: formData.image, is_active: formData.is_active }),
         });
         if (!response.ok) {
           const errData = await response.json().catch(() => ({}));
@@ -96,7 +97,7 @@ function Admin() {
   };
 
   const resetForm = () => {
-    setFormData({ id: null, name: '', price: '', image: '' });
+    setFormData({ id: null, name: '', price: '', image: '', is_active: true });
   };
 
   return (
@@ -132,6 +133,13 @@ function Admin() {
               style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
             />
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
+            <input 
+              type="checkbox" name="is_active" checked={formData.is_active} onChange={handleInputChange} id="isActiveCheckbox"
+              style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+            />
+            <label htmlFor="isActiveCheckbox" style={{ cursor: 'pointer' }}>Show Online (Active)</label>
+          </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button type="submit" className="btn-pay">{formData.id ? 'Update Product' : 'Add Product'}</button>
             {formData.id && <button type="button" onClick={resetForm} className="btn-wallet">Cancel</button>}
@@ -147,15 +155,27 @@ function Admin() {
               <th style={{ padding: '1rem' }}>ID</th>
               <th style={{ padding: '1rem' }}>Name</th>
               <th style={{ padding: '1rem' }}>Price</th>
+              <th style={{ padding: '1rem' }}>Status</th>
               <th style={{ padding: '1rem' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {products.map(p => (
-              <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', opacity: p.is_active === false ? 0.6 : 1 }}>
                 <td style={{ padding: '1rem' }}>{p.id}</td>
                 <td style={{ padding: '1rem' }}>{p.name}</td>
                 <td style={{ padding: '1rem' }}>{p.price} USDC</td>
+                <td style={{ padding: '1rem' }}>
+                  <span style={{ 
+                    padding: '0.2rem 0.5rem', 
+                    borderRadius: '4px', 
+                    fontSize: '0.8rem',
+                    background: p.is_active !== false ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    color: p.is_active !== false ? '#10b981' : '#ef4444'
+                  }}>
+                    {p.is_active !== false ? 'Online' : 'Offline'}
+                  </span>
+                </td>
                 <td style={{ padding: '1rem' }}>
                   <button onClick={() => handleEdit(p)} style={{ marginRight: '0.5rem', background: '#3b82f6', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
                   <button onClick={() => handleDelete(p.id)} style={{ background: '#ef4444', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>Delete</button>

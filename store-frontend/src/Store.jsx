@@ -106,7 +106,7 @@ function Store() {
         <div style={{ textAlign: 'center', marginTop: '3rem', fontSize: '1.5rem' }}>Loading products from Database...</div>
       ) : (
         <div className="product-grid">
-          {products.map((p) => (
+          {products.filter(p => p.is_active !== false).map((p) => (
             <div key={p.id} className="product-card">
               <img src={p.image} alt={p.name} className="product-image" onError={(e)=>{e.target.src="/vite.svg"}} />
               <h2 className="product-name">{p.name}</h2>
