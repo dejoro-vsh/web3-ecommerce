@@ -10,7 +10,7 @@ module.exports = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY.startsWith("0x") ? process.env.PRIVATE_KEY : "0x" + process.env.PRIVATE_KEY] : []
     },
     polygon: {
-      url: process.env.POLYGON_RPC_URL || "https://polygon-rpc.com/",
+      url: process.env.POLYGON_RPC_URL || "https://polygon.llamarpc.com",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY.startsWith("0x") ? process.env.PRIVATE_KEY : "0x" + process.env.PRIVATE_KEY] : []
     }
   }
