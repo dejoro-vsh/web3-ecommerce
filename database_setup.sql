@@ -14,14 +14,3 @@ INSERT INTO products (name, price, image) VALUES
 ('Quantum Energy Core', 499, '/images/product3.png'),
 ('Neural Gauntlet X', 899, '/images/product4.png');
 
--- 3. Set up Row Level Security (RLS)
--- Allow anyone to read products
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access" ON products FOR SELECT USING (true);
-
--- Allow all operations for authenticated users (or you can disable RLS completely for testing)
-CREATE POLICY "Allow authenticated full access" ON products FOR ALL USING (auth.role() = 'authenticated');
-
--- Note: For a quick prototype, if you don't want to deal with auth tokens right away, 
--- you can just disable RLS on the table to allow the Admin panel to work without a real login:
--- ALTER TABLE products DISABLE ROW LEVEL SECURITY;
