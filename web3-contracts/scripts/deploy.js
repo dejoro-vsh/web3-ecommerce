@@ -9,13 +9,14 @@ async function main() {
   }
   console.log("Deploying contracts with the account:", deployer.address);
 
-  // 1. Deploy MockUSDC
-  console.log("\nDeploying MockUSDC...");
-  const MockUSDC = await hre.ethers.getContractFactory("MockUSDC");
-  const usdc = await MockUSDC.deploy();
-  await usdc.waitForDeployment();
-  const usdcAddress = await usdc.getAddress();
-  console.log("MockUSDC deployed to:", usdcAddress);
+  // 1. Deploy MockUSDC (ALREADY DEPLOYED)
+  console.log("\nSkipping MockUSDC deployment as it is already deployed.");
+  // const MockUSDC = await hre.ethers.getContractFactory("MockUSDC");
+  // const usdc = await MockUSDC.deploy();
+  // await usdc.waitForDeployment();
+  // const usdcAddress = await usdc.getAddress();
+  const usdcAddress = "0xb8DC5c827a3934cbC15Eac7b85fADC00ca91B5BD";
+  console.log("MockUSDC address:", usdcAddress);
 
   // 2. Deploy PaymentProcessor
   console.log("\nDeploying PaymentProcessor...");
