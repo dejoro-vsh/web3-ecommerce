@@ -3,8 +3,10 @@ import './index.css';
 
 function Admin() {
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('');
+  const [activeTab, setActiveTab] = useState('products');
   
   // Form State
   const [formData, setFormData] = useState({ id: null, name: '', price: '', image: '', is_active: true });
@@ -15,7 +17,19 @@ function Admin() {
 
   useEffect(() => {
     fetchProducts();
+    fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch('/api/orders');
+      if (!response.ok) return;
+      const data = await response.json();
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -104,6 +118,23 @@ function Admin() {
     setFormData({ id: null, name: '', price: '', image: '', is_active: true });
   };
 
+  const handleUpdateOrderStatus = async (id, newStatus) => {
+    setStatus('Updating order...');
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+      if (!response.ok) throw new Error('Failed to update order');
+      setStatus('Order updated successfully!');
+      fetchOrders();
+    } catch (error) {
+      console.error(error);
+      setStatus(`Error updating order: ${error.message}`);
+    }
+  };
+
   const handleLogin = (e) => {
     e.preventDefault();
     if (passwordInput === '123456') {
@@ -140,91 +171,145 @@ function Admin() {
     <div className="container" style={{ maxWidth: '800px' }}>
       <header>
         <h1 className="title">Admin Dashboard</h1>
-        <a href="/" className="btn-wallet">Back to Store</a>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button onClick={() => setActiveTab('products')} className="btn-wallet" style={{ background: activeTab === 'products' ? '#3b82f6' : 'rgba(255,255,255,0.1)' }}>Products</button>
+          <button onClick={() => setActiveTab('orders')} className="btn-wallet" style={{ background: activeTab === 'orders' ? '#3b82f6' : 'rgba(255,255,255,0.1)' }}>Orders</button>
+          <a href="/" className="btn-wallet" style={{ background: 'transparent' }}>Back to Store</a>
+        </div>
       </header>
 
       {status && <div className="status-bar" style={{ borderColor: status.includes('Error') || status.includes('Failed') ? '#ef4444' : '#10b981' }}>{status}</div>}
 
-      <div className="product-card" style={{ marginBottom: '2rem', textAlign: 'left' }}>
-        <h2>{formData.id ? 'Edit Product' : 'Add New Product'}</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-          <div>
-            <label>Product Name</label>
-            <input 
-              type="text" name="name" value={formData.name} onChange={handleInputChange} required
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
-            />
+      {activeTab === 'products' ? (
+        <>
+          <div className="product-card" style={{ marginBottom: '2rem', textAlign: 'left' }}>
+            <h2>{formData.id ? 'Edit Product' : 'Add New Product'}</h2>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              <div>
+                <label>Product Name</label>
+                <input 
+                  type="text" name="name" value={formData.name} onChange={handleInputChange} required
+                  style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                />
+              </div>
+              <div>
+                <label>Price (USDC)</label>
+                <input 
+                  type="number" name="price" value={formData.price} onChange={handleInputChange} required
+                  style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                />
+              </div>
+              <div>
+                <label>Image URL (e.g. /images/product1.png or http...)</label>
+                <input 
+                  type="text" name="image" value={formData.image} onChange={handleInputChange} required
+                  style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
+                <input 
+                  type="checkbox" name="is_active" checked={formData.is_active} onChange={handleInputChange} id="isActiveCheckbox"
+                  style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+                />
+                <label htmlFor="isActiveCheckbox" style={{ cursor: 'pointer' }}>Show Online (Active)</label>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button type="submit" className="btn-pay">{formData.id ? 'Update Product' : 'Add Product'}</button>
+                {formData.id && <button type="button" onClick={resetForm} className="btn-wallet">Cancel</button>}
+              </div>
+            </form>
           </div>
-          <div>
-            <label>Price (USDC)</label>
-            <input 
-              type="number" name="price" value={formData.price} onChange={handleInputChange} required
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
-            />
-          </div>
-          <div>
-            <label>Image URL (e.g. /images/product1.png or http...)</label>
-            <input 
-              type="text" name="image" value={formData.image} onChange={handleInputChange} required
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
-            />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
-            <input 
-              type="checkbox" name="is_active" checked={formData.is_active} onChange={handleInputChange} id="isActiveCheckbox"
-              style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
-            />
-            <label htmlFor="isActiveCheckbox" style={{ cursor: 'pointer' }}>Show Online (Active)</label>
-          </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button type="submit" className="btn-pay">{formData.id ? 'Update Product' : 'Add Product'}</button>
-            {formData.id && <button type="button" onClick={resetForm} className="btn-wallet">Cancel</button>}
-          </div>
-        </form>
-      </div>
 
-      <h2>Product List</h2>
-      {loading ? <p>Loading products...</p> : (
-        <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '8px', overflow: 'hidden' }}>
-          <thead>
-            <tr style={{ background: 'rgba(0,0,0,0.3)', textAlign: 'left' }}>
-              <th style={{ padding: '1rem' }}>ID</th>
-              <th style={{ padding: '1rem' }}>Name</th>
-              <th style={{ padding: '1rem' }}>Price</th>
-              <th style={{ padding: '1rem' }}>Status</th>
-              <th style={{ padding: '1rem' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map(p => (
-              <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', opacity: p.is_active === false ? 0.6 : 1 }}>
-                <td style={{ padding: '1rem' }}>{p.id}</td>
-                <td style={{ padding: '1rem' }}>{p.name}</td>
-                <td style={{ padding: '1rem' }}>{p.price} USDC</td>
-                <td style={{ padding: '1rem' }}>
-                  <span style={{ 
-                    padding: '0.2rem 0.5rem', 
-                    borderRadius: '4px', 
-                    fontSize: '0.8rem',
-                    background: p.is_active !== false ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                    color: p.is_active !== false ? '#10b981' : '#ef4444'
-                  }}>
-                    {p.is_active !== false ? 'Online' : 'Offline'}
-                  </span>
-                </td>
-                <td style={{ padding: '1rem' }}>
-                  <button onClick={() => handleEdit(p)} style={{ marginRight: '0.5rem', background: '#3b82f6', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
-                  <button onClick={() => handleDelete(p.id)} style={{ background: '#ef4444', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>Delete</button>
-                </td>
+          <h2>Product List</h2>
+          {loading ? <p>Loading products...</p> : (
+            <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '8px', overflow: 'hidden' }}>
+              <thead>
+                <tr style={{ background: 'rgba(0,0,0,0.3)', textAlign: 'left' }}>
+                  <th style={{ padding: '1rem' }}>ID</th>
+                  <th style={{ padding: '1rem' }}>Name</th>
+                  <th style={{ padding: '1rem' }}>Price</th>
+                  <th style={{ padding: '1rem' }}>Status</th>
+                  <th style={{ padding: '1rem' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', opacity: p.is_active === false ? 0.6 : 1 }}>
+                    <td style={{ padding: '1rem' }}>{p.id}</td>
+                    <td style={{ padding: '1rem' }}>{p.name}</td>
+                    <td style={{ padding: '1rem' }}>{p.price} USDC</td>
+                    <td style={{ padding: '1rem' }}>
+                      <span style={{ 
+                        padding: '0.2rem 0.5rem', 
+                        borderRadius: '4px', 
+                        fontSize: '0.8rem',
+                        background: p.is_active !== false ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        color: p.is_active !== false ? '#10b981' : '#ef4444'
+                      }}>
+                        {p.is_active !== false ? 'Online' : 'Offline'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <button onClick={() => handleEdit(p)} style={{ marginRight: '0.5rem', background: '#3b82f6', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
+                      <button onClick={() => handleDelete(p.id)} style={{ background: '#ef4444', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+                {products.length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{ padding: '1rem', textAlign: 'center' }}>No products found in Database.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </>
+      ) : (
+        <>
+          <h2>Customer Orders</h2>
+          <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse', background: 'rgba(30, 41, 59, 0.7)', borderRadius: '8px', overflow: 'hidden' }}>
+            <thead>
+              <tr style={{ background: 'rgba(0,0,0,0.3)', textAlign: 'left' }}>
+                <th style={{ padding: '1rem' }}>ID</th>
+                <th style={{ padding: '1rem' }}>Product</th>
+                <th style={{ padding: '1rem' }}>Customer / Shipping</th>
+                <th style={{ padding: '1rem' }}>Tx Hash</th>
+                <th style={{ padding: '1rem' }}>Status</th>
               </tr>
-            ))}
-            {products.length === 0 && (
-              <tr>
-                <td colSpan="4" style={{ padding: '1rem', textAlign: 'center' }}>No products found in Database.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {orders.map(o => (
+                <tr key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={{ padding: '1rem' }}>#{o.id}</td>
+                  <td style={{ padding: '1rem' }}>
+                    <strong>{o.product_name}</strong><br/>
+                    <span style={{ fontSize: '0.8rem', color: '#10b981' }}>{o.price} USDC</span>
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    <strong>{o.shipping_name}</strong><br/>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{o.shipping_address}</span><br/>
+                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Wallet: {o.buyer_wallet.slice(0, 8)}...</span>
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    <a href={`https://polygonscan.com/tx/${o.tx_hash}`} target="_blank" rel="noreferrer" style={{ color: '#38bdf8', fontSize: '0.8rem' }}>View Tx</a>
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    {o.status === 'Pending' ? (
+                      <button onClick={() => handleUpdateOrderStatus(o.id, 'Shipped')} style={{ background: '#f59e0b', border: 'none', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}>Mark Shipped</button>
+                    ) : (
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>Shipped</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan="5" style={{ padding: '1rem', textAlign: 'center' }}>No orders found yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </>
       )}
     </div>
   );

@@ -18,6 +18,12 @@ function Store() {
   const [account, setAccount] = useState("");
   const [status, setStatus] = useState("");
   const [loadingId, setLoadingId] = useState(null);
+  
+  // Checkout Modal State
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [shippingName, setShippingName] = useState("");
+  const [shippingAddress, setShippingAddress] = useState("");
 
   useEffect(() => {
     fetchProducts();
@@ -54,13 +60,21 @@ function Store() {
     }
   };
 
-  const handlePay = async (productId, price) => {
+  const handleCheckoutClick = (product) => {
     if (!account) {
       setStatus("Please connect your wallet first!");
       return;
     }
+    setSelectedProduct(product);
+    setShowCheckout(true);
+  };
+
+  const handlePay = async (e) => {
+    e.preventDefault();
+    if (!account || !selectedProduct) return;
     
-    setLoadingId(productId);
+    setShowCheckout(false);
+    setLoadingId(selectedProduct.id);
     setStatus("Initiating Payment...");
 
     try {
@@ -71,7 +85,7 @@ function Store() {
       const paymentContract = new ethers.Contract(CONTRACT_ADDRESS, PAYMENT_PROCESSOR_ABI, signer);
 
       // Convert price to USDC units (6 decimals)
-      const amountInUnits = ethers.parseUnits(price.toString(), 6);
+      const amountInUnits = ethers.parseUnits(selectedProduct.price.toString(), 6);
       
       setStatus("Step 1: Please approve USDC spending in MetaMask...");
       const approveTx = await usdcContract.approve(CONTRACT_ADDRESS, amountInUnits);
@@ -80,12 +94,31 @@ function Store() {
       await approveTx.wait();
 
       setStatus("Step 2: Please confirm the payment in MetaMask...");
-      const payTx = await paymentContract.pay(productId, amountInUnits);
+      const payTx = await paymentContract.pay(selectedProduct.id, amountInUnits);
       
       setStatus("Step 2: Waiting for payment confirmation...");
-      await payTx.wait();
+      const receipt = await payTx.wait();
 
-      setStatus(`Payment Successful for Product #${productId}!`);
+      setStatus("Saving order details...");
+      
+      // Save order to Database
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buyer_wallet: account,
+          product_id: selectedProduct.id,
+          product_name: selectedProduct.name,
+          price: selectedProduct.price,
+          shipping_name: shippingName,
+          shipping_address: shippingAddress,
+          tx_hash: receipt.hash
+        })
+      });
+
+      setStatus(`Payment Successful! Order saved. (Tx: ${receipt.hash.slice(0,10)}...)`);
+      setShippingName("");
+      setShippingAddress("");
     } catch (error) {
       console.error(error);
       setStatus("Payment Failed or Cancelled by User");
@@ -121,14 +154,44 @@ function Store() {
               <p className="product-price">{p.price} USDC</p>
               <button 
                 className={`btn-pay ${loadingId === p.id ? 'loading' : ''}`}
-                onClick={() => handlePay(p.id, p.price)}
+                onClick={() => handleCheckoutClick(p)}
                 disabled={loadingId !== null}
               >
-                {loadingId === p.id ? 'Processing...' : 'Pay with USDC'}
+                {loadingId === p.id ? 'Processing...' : 'Buy Now'}
               </button>
             </div>
           ))}
           {products.length === 0 && <p style={{ gridColumn: '1/-1', textAlign: 'center' }}>No products available.</p>}
+        </div>
+      )}
+
+      {/* Checkout Modal */}
+      {showCheckout && selectedProduct && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="product-card" style={{ width: '90%', maxWidth: '500px', padding: '2rem' }}>
+            <h2>Checkout: {selectedProduct.name}</h2>
+            <p style={{ margin: '1rem 0', color: '#10b981', fontSize: '1.2rem' }}>Total: {selectedProduct.price} USDC</p>
+            <form onSubmit={handlePay} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label>Full Name</label>
+                <input 
+                  type="text" required value={shippingName} onChange={e => setShippingName(e.target.value)}
+                  style={{ width: '100%', padding: '0.8rem', marginTop: '0.5rem', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                />
+              </div>
+              <div>
+                <label>Shipping Address (or Email for Digital)</label>
+                <textarea 
+                  required rows="3" value={shippingAddress} onChange={e => setShippingAddress(e.target.value)}
+                  style={{ width: '100%', padding: '0.8rem', marginTop: '0.5rem', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontFamily: 'inherit' }}
+                ></textarea>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="submit" className="btn-pay" style={{ flex: 1 }}>Pay with MetaMask</button>
+                <button type="button" className="btn-wallet" onClick={() => setShowCheckout(false)} style={{ background: '#ef4444' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
