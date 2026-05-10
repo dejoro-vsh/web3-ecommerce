@@ -89,7 +89,7 @@ function Store() {
   return (
     <div className="container">
       <header>
-        <h1 className="title">WEB3 STORE</h1>
+        <h1 className="title">YACOMMERCE</h1>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {account ? (
             <button className="btn-wallet connected">Connected: {account.slice(0, 6)}...{account.slice(-4)}</button>
